@@ -29,14 +29,38 @@ async function run() {
     const bookingCollection = database.collection('Bookings')
 
     app.get('/appointmentOptions', async (req, res) => {
+      const date = req.query.date;
+      console.log(date);
       const query = {};
-      const result = await appointmentOptionCollection.find(query).toArray();
-      res.send(result)
+      const options = await appointmentOptionCollection.find(query).toArray();
+
+      const bookingQuery = { appointmentDate:date }
+      const alreadyBooked = await bookingCollection.find(bookingQuery).toArray();
+      // console.log(alreadyBooking);
+
+      options.forEach(option => {
+        const optionBooked = alreadyBooked.filter(book => book.treatment === option.name);
+        const bookedSlots = optionBooked.map(book => book.slot);
+        console.log(bookedSlots);
+        const remainingSlots = option.slots.filter(slot => !bookedSlots.includes(slot));
+        option.slots = remainingSlots;
+      })
+
+      res.send(options)
 })
 
     app.post('/bookings', async (req, res) => {
       const bookings = req.body;
-      console.log(bookings);
+      const query = {
+        appointmentDate: bookings.appointmentDate,
+        email: bookings.email,
+        treatment: bookings.treatment
+      }
+      const alreadyBooked = await bookingCollection.find(query).toArray();
+      if (alreadyBooked.length) {
+        const message = `You have a booking on ${bookings.appointmentDate}. You can try another day. `
+        return res.send({acknowledged: false, message})
+      }
       const result = await bookingCollection.insertOne(bookings);
       res.send(result)
     })
