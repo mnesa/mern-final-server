@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 
 const port = process.env.PORT || 3000;
@@ -26,7 +26,8 @@ async function run() {
   try {
     const database = client.db('mern-Final-proj23');
     const appointmentOptionCollection = database.collection('AppointmentOptions');
-    const bookingCollection = database.collection('Bookings')
+    const bookingCollection = database.collection('Bookings');
+    const usersCollection = database.collection('Users')
 
     app.get('/appointmentOptions', async (req, res) => {
       const date = req.query.date;
@@ -62,6 +63,44 @@ async function run() {
         return res.send({acknowledged: false, message})
       }
       const result = await bookingCollection.insertOne(bookings);
+      res.send(result)
+    })
+
+    // specific user appointment
+    app.get('/bookings', async (req, res) => {
+      const email = req.query.email;
+      const query = {
+        email: email
+      }
+      const bookings = await bookingCollection.find(query).toArray();
+      res.send(bookings)
+    })
+
+    // user saved
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const result = await usersCollection.insertOne(user);
+      res.send(result)
+    })
+    // user get
+    app.get('/users', async (req, res) => {
+      const query = {};
+      const users = await usersCollection.find(query).toArray();
+      res.send(users)
+    })
+
+    // update specific user
+    app.put('/users/admin/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const updatedDoc = {
+        $set: {
+          role: 'admin'
+        }
+      }
+      const result = await usersCollection.updateOne(filter, updatedDoc, options);
       res.send(result)
     })
 
