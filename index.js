@@ -80,11 +80,20 @@ async function run() {
     // specific user appointment
     app.get('/bookings', async (req, res) => {
       const email = req.query.email;
+      // console.log(email);
       const query = {
         email: email
       }
       const bookings = await bookingCollection.find(query).toArray();
       res.send(bookings)
+      // console.log(bookings);
+    })
+
+    app.get('/bookings/:id', async (req, res) => {
+      const id = req.params.id;
+      const query ={_id: new ObjectId(id)}
+      const booking = await bookingCollection.findOne(query);
+      res.send(booking)
     })
 
     // user saved
@@ -121,6 +130,20 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updatedDoc, options);
       res.send(result)
     })
+
+
+    // temporary
+    // app.get('/price', async (req, res) => {
+    //   const filter ={}
+    //   const option = {upsert: true}
+    //   const updateDoc = {
+    //     $set: {
+    //       price: 90
+    //     }
+    //   }
+    //   const result = await appointmentOptionCollection.updateMany(filter, updateDoc, option);
+    //   res.send(result)
+    // })
 
     // Doctor
     app.get('/doctors', async (req, res) => {
